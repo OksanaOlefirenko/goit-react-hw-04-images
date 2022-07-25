@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 
@@ -10,45 +10,41 @@ import {
 } from './Searchbar.styled';
 import { FaSearch } from 'react-icons/fa';
 
-export class Searchbar extends Component {
-  state = {
-    searchQuery: '',
+export const Searchbar = ({ onSubmit }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleQueryChange = e => {
+    setSearchQuery(e.currentTarget.value);
   };
 
-  handleQueryChange = e => {
-    this.setState({ searchQuery: e.currentTarget.value });
-  };
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
-    if (this.state.searchQuery.trim() === '') {
+    if (searchQuery.trim() === '') {
       return toast.warn('Please, enter search query');
     }
-    this.props.onSubmit(this.state.searchQuery);
-    this.setState({ searchQuery: '' });
+    onSubmit(searchQuery);
+    setSearchQuery('');
   };
 
-  render() {
-    return (
-      <Searchbox>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchButton type="submit">
-            <FaSearch size={20}></FaSearch>
-          </SearchButton>
+  return (
+    <Searchbox>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchButton type="submit">
+          <FaSearch size={20}></FaSearch>
+        </SearchButton>
 
-          <SearchInput
-            type="text"
-            autocomplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.searchQuery}
-            onChange={this.handleQueryChange}
-          />
-        </SearchForm>
-      </Searchbox>
-    );
-  }
-}
+        <SearchInput
+          type="text"
+          autocomplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={searchQuery}
+          onChange={handleQueryChange}
+        />
+      </SearchForm>
+    </Searchbox>
+  );
+};
 
 Searchbar.propTypes = {
   onSubmit: PropTypes.func,

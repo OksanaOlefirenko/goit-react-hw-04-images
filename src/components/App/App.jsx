@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Container } from './App.styled';
@@ -9,30 +9,27 @@ import { Modal } from 'components/Modal';
 import { Loader } from 'components/Loader';
 import { getImagesWithQuery } from 'services/api';
 
-export class App extends Component {
-  state = {
-    showModal: false,
-    selectedImage: null,
-    searchQuery: '',
-    images: [],
-    isLoading: false,
-    error: null,
-    page: 1,
-  };
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [tags, setTags] = useState('');
 
-  async componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevState.searchQuery;
-    const nextQuery = this.state.searchQuery;
-    const nextPage = this.state.page;
-
-    if (prevQuery !== nextQuery || prevState.page !== nextPage) {
-      this.addImages(nextQuery, nextPage);
+  useEffect(() => {
+    if (searchQuery === '') {
+      return;
     }
-  }
+    addImages(searchQuery, page);
+  }, [searchQuery, page]);
 
-  addImages = async (query, page) => {
+  const addImages = async (query, page) => {
     try {
-      this.setState({ isLoading: true });
+      setIsLoading(true);
       const items = await getImagesWithQuery(query, page);
       if (items.hits.length === 0) {
         return toast.error(
@@ -43,62 +40,50 @@ export class App extends Component {
         toast.success(`Hooray! We found ${items.totalHits} images.`);
       }
 
-      this.setState(({ images }) => ({
-        images: [...images, ...items.hits],
-        total: items.totalHits,
-      }));
+      setImages(prevImages => [...prevImages, ...items.hits]);
+      setTotal(items.totalHits);
     } catch (error) {
-      this.setState({ error });
+      setError(error);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  handleFormSubmit = searchQuery => {
-    if (searchQuery === this.state.searchQuery) return;
-    this.setState({
-      page: 1,
-      searchQuery,
-      images: [],
-    });
+  const handleFormSubmit = newSearchQuery => {
+    if (newSearchQuery === searchQuery) return;
+    setPage(1);
+    setSearchQuery(newSearchQuery);
+    setImages([]);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-      isLoading: true,
-    }));
+  const loadMore = () => {
+    setPage(prevPage => prevPage + 1);
+    setIsLoading(true);
   };
 
-  toggleModal = largeImageURL => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      selectedImage: largeImageURL,
-    }));
+  const toggleModal = (largeImageURL, tags) => {
+    setShowModal(prevState => !prevState);
+    setSelectedImage(largeImageURL);
+    setTags(tags);
   };
 
-  render() {
-    const { showModal, error, isLoading, images, total, selectedImage, tags } =
-      this.state;
-    const isLastPage = images.length === total;
-    return (
-      <Container>
-        <ToastContainer theme="colored" position="top-right" autoClose={3000} />
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {error && toast.error(`Whoops, something went wrong: ${error.message}`)}
-        {isLoading && <Loader />}
-        {images.length > 0 && (
-          <ImageGallery images={images} onClick={this.toggleModal} />
-        )}
-        {images.length > 0 && !isLastPage && (
-          <Button onClick={this.loadMore}></Button>
-        )}
-        {showModal && (
-          <Modal onClose={this.toggleModal}>
-            <img src={selectedImage} alt={tags} />
-          </Modal>
-        )}
-      </Container>
-    );
-  }
-}
+  const isLastPage = images.length === total;
+
+  return (
+    <Container>
+      <ToastContainer theme="colored" position="top-right" autoClose={3000} />
+      <Searchbar onSubmit={handleFormSubmit} />
+      {error && toast.error(`Whoops, something went wrong: ${error.message}`)}
+      {isLoading && <Loader />}
+      {images.length > 0 && (
+        <ImageGallery images={images} onClick={toggleModal} />
+      )}
+      {images.length > 0 && !isLastPage && <Button onClick={loadMore}></Button>}
+      {showModal && (
+        <Modal onClose={toggleModal}>
+          <img src={selectedImage} alt={tags} />
+        </Modal>
+      )}
+    </Container>
+  );
+};
