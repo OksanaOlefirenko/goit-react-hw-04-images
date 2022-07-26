@@ -14,11 +14,9 @@ export const App = () => {
   const [images, setImages] = useState([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState(null);
   const [total, setTotal] = useState(0);
-  const [tags, setTags] = useState('');
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
     if (searchQuery === '') {
@@ -61,10 +59,12 @@ export const App = () => {
     setIsLoading(true);
   };
 
-  const toggleModal = (largeImageURL, tags) => {
-    setShowModal(prevState => !prevState);
-    setSelectedImage(largeImageURL);
-    setTags(tags);
+  const openModal = (largeImageURL, tags) => {
+    setModal({ largeImageURL, tags });
+  };
+
+  const closeModal = () => {
+    setModal('');
   };
 
   const isLastPage = images.length === total;
@@ -76,12 +76,12 @@ export const App = () => {
       {error && toast.error(`Whoops, something went wrong: ${error.message}`)}
       {isLoading && <Loader />}
       {images.length > 0 && (
-        <ImageGallery images={images} onClick={toggleModal} />
+        <ImageGallery images={images} onClick={openModal} />
       )}
       {images.length > 0 && !isLastPage && <Button onClick={loadMore}></Button>}
-      {showModal && (
-        <Modal onClose={toggleModal}>
-          <img src={selectedImage} alt={tags} />
+      {modal && (
+        <Modal onClose={closeModal}>
+          <img src={modal.largeImageURL} alt={modal.tags} />
         </Modal>
       )}
     </Container>
